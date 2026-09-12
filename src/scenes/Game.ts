@@ -12,8 +12,8 @@ export default class Game extends Scene {
     this.safe.resize(window.innerWidth, window.innerHeight);
   }
 
-  async start() {
-    // TODO: Start the game
+  update() {
+    this.safe.updateTimer();
   }
 
   onResize(width: number, height: number) {

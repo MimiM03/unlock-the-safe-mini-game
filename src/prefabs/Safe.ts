@@ -3,6 +3,9 @@ import { Container, Sprite } from "pixi.js";
 import Keyboard from "../core/Keyboard";
 import { Handle, type TurnDirection } from "./Handle";
 import { CombinationManager } from "../backend/CombinationManager";
+import { Timer } from "../backend/Timer";
+import { Text } from "pixi.js";
+import config from "../config";
 
 export default class Safe extends Container {
   private background: Sprite;
@@ -13,6 +16,8 @@ export default class Safe extends Container {
   private opened = false;
   private keyboard = Keyboard.getInstance();
   private combinationManager = new CombinationManager();
+  private timer = new Timer();
+  private timerText: Text;
 
   constructor() {
     super();
@@ -51,7 +56,13 @@ export default class Safe extends Container {
     this.sparkles[1].position.set(140, -125);
     this.sparkles[2].position.set(-170, 100);
     this.sparkles.forEach(sparkle => sparkle.visible = false);
-    this.addChild(this.background, ...this.sparkles,this.doorClosed, this.doorOpen);
+
+    this.timerText = new Text("00:00:00", { fontSize: 20, fontWeight: "bold", fill: "white" });
+    this.timerText.resolution = 2;
+    this.timerText.position.set(config.offsets.timer.x, config.offsets.timer.y);
+    this.timerText.anchor.set(0.5);
+    this.timer.start();
+    this.addChild(this.background, ...this.sparkles,this.doorClosed, this.doorOpen, this.timerText);
 
     this.setupInput();
   }
@@ -86,14 +97,17 @@ export default class Safe extends Container {
     console.log(`Result: "${result}"`);
 
     if (result === "FAIL") {
+      this.timer.stop();
       await this.handle.handleFailure(direction);
       this.combinationManager.reset();
+      this.timer.start();
       return;
 
     } else if (result === "SUCCESS") {
+      this.timer.stop();
       await this.handleSuccess();
       this.combinationManager.reset();
-
+      this.timer.start();
       return;
     }
   }
@@ -184,7 +198,13 @@ export default class Safe extends Container {
       this.opened = false;
     }
   }
-  resize(width: number, height: number) {
+
+  updateTimer(): void {
+    if (!this.timer.isTimerRunning()) return;
+    this.timerText.text = this.timer.formatTime();
+  }
+
+  resize(width: number, height: number): void {
     const bg = this.background.texture;
     const scale = Math.max(width / bg.width, height / bg.height);
 
