@@ -14,7 +14,7 @@ export class CombinationManager {
     this.generateSecretCombination();
   }
 
-  public generateSecretCombination(){
+  public generateSecretCombination(): void {
     let currentDirection: TurnDirection = Math.random() > 0.5 ? 1 : -1;
 
     for (let i = 0; i < 3; i++) {
@@ -56,7 +56,7 @@ export class CombinationManager {
     return "IN_PROGRESS";
   }
 
-  public reset(){
+  public reset(): void {
     this.combinations = [];
     this.currentIndex = 0;
     this.currentNumProgress = 0;

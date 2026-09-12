@@ -2,7 +2,7 @@ import gsap from "gsap";
 import { Container, Sprite } from "pixi.js";
 import config from "../config";
 
-export type TurnDirection = 1 | -1;
+export type TurnDirection = 1 | -1; // CW (1) or CCW (-1)
 
 export class Handle extends Container {
   private handleSprite: Sprite;
@@ -50,7 +50,7 @@ export class Handle extends Container {
     return true;
   }
 
-  async handleFailure(direction: TurnDirection){
+  async handleFailure(direction: TurnDirection): Promise<void> {
     if (this.turning) return;
 
     this.turning = true;

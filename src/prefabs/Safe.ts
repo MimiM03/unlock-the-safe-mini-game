@@ -34,27 +34,20 @@ export default class Safe extends Container {
 
     this.background.anchor.set(0.5);
     this.doorClosed.anchor.set(1, 0.5);
-    
-    const DOOR_CLOSED_OFFSET_X = 440;
-    const DOOR_CLOSED_OFFSET_Y = -40;
-    this.doorClosed.position.set(DOOR_CLOSED_OFFSET_X, DOOR_CLOSED_OFFSET_Y);
+
+    this.doorClosed.position.set(config.offsets.door.closed.x, config.offsets.door.closed.y);
 
     this.doorClosed.addChild(this.handle);
-    const HANDLE_OFFSET_X = -440;
-    const HANDLE_OFFSET_Y = 0;
-    this.handle.position.set(HANDLE_OFFSET_X, HANDLE_OFFSET_Y);
+    this.handle.position.set(config.offsets.handle.x, config.offsets.handle.y);
     
     this.doorOpen.anchor.set(0, 0.5);
-    const DOOR_OPEN_OFFSET_X = 400;
-    const DOOR_OPEN_OFFSET_Y = -40;
-    this.doorOpen.position.set(DOOR_OPEN_OFFSET_X, DOOR_OPEN_OFFSET_Y);
+    this.doorOpen.position.set(config.offsets.door.open.x, config.offsets.door.open.y);
     this.doorOpen.visible = false;
-    // this.doorClosed.visible = false;
 
     this.sparkles.forEach(sparkle => sparkle.anchor.set(0.5));
-    this.sparkles[0].position.set(130, 100);
-    this.sparkles[1].position.set(140, -125);
-    this.sparkles[2].position.set(-170, 100);
+    this.sparkles[0].position.set(config.offsets.sparkles.top.x, config.offsets.sparkles.top.y);
+    this.sparkles[1].position.set(config.offsets.sparkles.middle.x, config.offsets.sparkles.middle.y);
+    this.sparkles[2].position.set(config.offsets.sparkles.bottom.x, config.offsets.sparkles.bottom.y);
     this.sparkles.forEach(sparkle => sparkle.visible = false);
 
     this.timerText = new Text("00:00:00", { fontSize: 20, fontWeight: "bold", fill: "white" });
@@ -67,7 +60,7 @@ export default class Safe extends Container {
     this.setupInput();
   }
 
-  private setupInput() {
+  private setupInput(): void {
     this.keyboard.onAction(({ action, buttonState }) => {
       if (buttonState !== "pressed") return;
 
@@ -80,14 +73,13 @@ export default class Safe extends Container {
 
     this.on("pointertap", (event) => {
       const local = this.toLocal(event.global);
-      // handle.x is door-local; compare in Safe space
       const handlePos = this.toLocal(this.handle.getGlobalPosition());
       const direction: TurnDirection = local.x < handlePos.x ? -1 : 1;
       void this.turnHandle(direction);
     });
   }
 
-  async turnHandle(direction: TurnDirection) {
+  async turnHandle(direction: TurnDirection): Promise<void> {
     if (this.opened) return;
 
     const turnedSuccessfully = await this.handle.turn(direction);
@@ -112,7 +104,7 @@ export default class Safe extends Container {
     }
   }
 
-  async handleSuccess() {
+  async handleSuccess(): Promise<void> {
     if (this.opened) return;
 
     this.opened = true;
@@ -131,7 +123,7 @@ export default class Safe extends Container {
         ease: "power2.in",
       });
 
-      tl.to(this.doorOpen, { alpha: 1, duration: 0.01, ease: "power1.out" }, 1.99);
+      tl.to(this.doorOpen, { alpha: 1, duration: 0.01, ease: "power2.out" }, 1.99);
 
       tl.to(this.doorOpen.scale, { x: 1, duration: 2, ease: "power2.out" }, 1.9);
 
@@ -180,7 +172,7 @@ export default class Safe extends Container {
         this.doorClosed.visible = true;
       });
       tl2.to(this.doorOpen.scale, { x: 0, duration: 2, ease: "power2.in" });
-      tl2.to(this.doorOpen, { alpha: 0, duration: 0.01, ease: "power1.out" }, 1.99);
+      tl2.to(this.doorOpen, { alpha: 0, duration: 0.01, ease: "power2.out" }, 1.99);
       tl2.to(this.doorClosed.scale, { x: 1, duration: 2, ease: "power2.out" }, 1.9);
       tl2.add(() => {
         this.doorOpen.visible = false;
