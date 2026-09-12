@@ -7,7 +7,6 @@ export default class Game extends Scene {
   private safe!: Safe;
 
   load() {
-    // TODO: Load assets
     this.safe = new Safe();
     this.addChild(this.safe);
     this.safe.resize(window.innerWidth, window.innerHeight);

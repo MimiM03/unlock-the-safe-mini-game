@@ -1,8 +1,13 @@
+import gsap from "gsap";
 import { Container, Sprite } from "pixi.js";
+import config from "../config";
+
+export type TurnDirection = 1 | -1;
 
 export class Handle extends Container {
   private handleSprite: Sprite;
   private shadowSprite: Sprite;
+  private turning = false;
 
   constructor() {
     super();
@@ -20,5 +25,26 @@ export class Handle extends Container {
 
     this.addChild(this.shadowSprite);
     this.addChild(this.handleSprite);
+  }
+
+  // CW = 1, CCW = -1. Spins both sprites in place; shadow keeps a fixed drop offset.
+  async turn(direction: TurnDirection) {
+    if (this.turning) return;
+
+    this.turning = true;
+
+    const stepRadians = (config.handle.stepDegrees * Math.PI) / 180;
+    const targetRotation =
+      this.handleSprite.rotation + direction * stepRadians;
+
+    try {
+      await gsap.to([this.handleSprite, this.shadowSprite], {
+        rotation: targetRotation,
+        duration: config.handle.turnDuration,
+        ease: "power2.out",
+      });
+    } finally {
+      this.turning = false;
+    }
   }
 }
