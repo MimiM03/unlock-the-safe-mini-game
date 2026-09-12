@@ -28,8 +28,8 @@ export class Handle extends Container {
   }
 
   // CW = 1, CCW = -1. Spins both sprites in place; shadow keeps a fixed drop offset.
-  async turn(direction: TurnDirection) {
-    if (this.turning) return;
+  async turn(direction: TurnDirection): Promise<boolean> {
+    if (this.turning) return false;
 
     this.turning = true;
 
@@ -46,6 +46,8 @@ export class Handle extends Container {
     } finally {
       this.turning = false;
     }
+
+    return true;
   }
 
   async handleFailure(direction: TurnDirection){

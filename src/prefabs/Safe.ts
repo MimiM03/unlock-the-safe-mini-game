@@ -1,3 +1,4 @@
+import gsap from "gsap";
 import { Container, Sprite } from "pixi.js";
 import Keyboard from "../core/Keyboard";
 import { Handle, type TurnDirection } from "./Handle";
@@ -6,7 +7,10 @@ import { CombinationManager } from "../backend/CombinationManager";
 export default class Safe extends Container {
   private background: Sprite;
   private doorClosed: Sprite;
+  private doorOpen: Sprite;
+  private sparkles: Sprite[];
   private handle: Handle;
+  private opened = false;
   private keyboard = Keyboard.getInstance();
   private combinationManager = new CombinationManager();
 
@@ -15,20 +19,39 @@ export default class Safe extends Container {
 
     this.background = Sprite.from("background");
     this.doorClosed = Sprite.from("doorClosed");
+    this.doorOpen = Sprite.from("doorOpen");
+    this.sparkles = [
+      Sprite.from("shine"),
+      Sprite.from("shine"),
+      Sprite.from("shine"),
+    ];
     this.handle = new Handle();
 
     this.background.anchor.set(0.5);
     this.doorClosed.anchor.set(1, 0.5);
-
+    
     const DOOR_CLOSED_OFFSET_X = 440;
     const DOOR_CLOSED_OFFSET_Y = -40;
     this.doorClosed.position.set(DOOR_CLOSED_OFFSET_X, DOOR_CLOSED_OFFSET_Y);
 
-    const HANDLE_OFFSET_X = 0;
-    const HANDLE_OFFSET_Y = -40;
+    this.doorClosed.addChild(this.handle);
+    const HANDLE_OFFSET_X = -440;
+    const HANDLE_OFFSET_Y = 0;
     this.handle.position.set(HANDLE_OFFSET_X, HANDLE_OFFSET_Y);
+    
+    this.doorOpen.anchor.set(0, 0.5);
+    const DOOR_OPEN_OFFSET_X = 400;
+    const DOOR_OPEN_OFFSET_Y = -40;
+    this.doorOpen.position.set(DOOR_OPEN_OFFSET_X, DOOR_OPEN_OFFSET_Y);
+    this.doorOpen.visible = false;
+    // this.doorClosed.visible = false;
 
-    this.addChild(this.background, this.doorClosed, this.handle);
+    this.sparkles.forEach(sparkle => sparkle.anchor.set(0.5));
+    this.sparkles[0].position.set(130, 100);
+    this.sparkles[1].position.set(140, -125);
+    this.sparkles[2].position.set(-170, 100);
+    this.sparkles.forEach(sparkle => sparkle.visible = false);
+    this.addChild(this.background, ...this.sparkles,this.doorClosed, this.doorOpen);
 
     this.setupInput();
   }
@@ -46,13 +69,18 @@ export default class Safe extends Container {
 
     this.on("pointertap", (event) => {
       const local = this.toLocal(event.global);
-      const direction: TurnDirection = local.x < this.handle.x ? -1 : 1;
+      // handle.x is door-local; compare in Safe space
+      const handlePos = this.toLocal(this.handle.getGlobalPosition());
+      const direction: TurnDirection = local.x < handlePos.x ? -1 : 1;
       void this.turnHandle(direction);
     });
   }
 
   async turnHandle(direction: TurnDirection) {
-    await this.handle.turn(direction);
+    if (this.opened) return;
+
+    const turnedSuccessfully = await this.handle.turn(direction);
+    if (!turnedSuccessfully) return;
 
     const result = this.combinationManager.registerPlayerTurn(direction);
     console.log(`Result: "${result}"`);
@@ -61,12 +89,101 @@ export default class Safe extends Container {
       await this.handle.handleFailure(direction);
       this.combinationManager.reset();
       return;
-      
+
     } else if (result === "SUCCESS") {
-      // TODO: handle success, open safe
+      await this.handleSuccess();
+      this.combinationManager.reset();
+
+      return;
     }
   }
 
+  async handleSuccess() {
+    if (this.opened) return;
+
+    this.opened = true;
+
+    this.doorOpen.visible = true;
+    this.doorOpen.alpha = 0;
+    this.doorOpen.scale.x = 0.1;
+
+    try {
+      const tl = gsap.timeline();
+
+      // Open the door
+      tl.to(this.doorClosed.scale, {
+        x: 0,
+        duration: 2,
+        ease: "power2.in",
+      });
+
+      tl.to(this.doorOpen, { alpha: 1, duration: 0.01, ease: "power1.out" }, 1.99);
+
+      tl.to(this.doorOpen.scale, { x: 1, duration: 2, ease: "power2.out" }, 1.9);
+
+      tl.add(() => {
+        this.doorClosed.visible = false;
+      });
+
+      // Start sparkles while the door is still opening
+      tl.add(() => {
+        this.sparkles.forEach((sparkle, i) => {
+          sparkle.visible = true;
+          sparkle.alpha = 0.35;
+          sparkle.scale.set(0.7);
+
+          const delay = i * 0.15;
+
+          gsap.to(sparkle, {
+            alpha: 1,
+            duration: 0.4,
+            yoyo: true,
+            repeat: -1,
+            delay,
+            ease: "sine.inOut",
+          });
+
+          gsap.to(sparkle.scale, {
+            x: 1.4,
+            y: 1.4,
+            duration: 0.4,
+            yoyo: true,
+            repeat: -1,
+            delay,
+            ease: "sine.inOut",
+          });
+        });
+      }, 0.6);
+
+      await tl;
+
+      // Keep twinkling for 5 seconds after the door is open
+      await gsap.to({}, { duration: 5 });
+
+      const tl2 = gsap.timeline();
+      // Close the door
+      tl2.add(() => {
+        this.doorClosed.visible = true;
+      });
+      tl2.to(this.doorOpen.scale, { x: 0, duration: 2, ease: "power2.in" });
+      tl2.to(this.doorOpen, { alpha: 0, duration: 0.01, ease: "power1.out" }, 1.99);
+      tl2.to(this.doorClosed.scale, { x: 1, duration: 2, ease: "power2.out" }, 1.9);
+      tl2.add(() => {
+        this.doorOpen.visible = false;
+      });
+
+      await tl.add(tl2);
+
+      // Stop the sparkles
+      gsap.killTweensOf(this.sparkles);
+      gsap.killTweensOf(this.sparkles.map((s) => s.scale));
+      this.sparkles.forEach((s) => {
+        s.visible = false;
+      });
+    } finally {
+      this.opened = false;
+    }
+  }
   resize(width: number, height: number) {
     const bg = this.background.texture;
     const scale = Math.max(width / bg.width, height / bg.height);
