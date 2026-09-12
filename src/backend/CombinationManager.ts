@@ -24,7 +24,10 @@ export class CombinationManager {
     }
 
     const formattedCode = this.combinations
-      .map((pair) => `${pair.num} ${pair.direction}`)
+      .map((pair) => {
+        const direction = pair.direction === 1 ? "CW" : "CCW";
+        return `${pair.num} ${direction}`;
+      })
       .join(", ");
 
     console.log(`Secret Combination: "${formattedCode}"`);
