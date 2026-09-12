@@ -1,6 +1,5 @@
 import { Assets } from "pixi.js";
 import { Debug } from "../utils/debug";
-import "pixi-spine";
 
 type Asset = {
   name: string;

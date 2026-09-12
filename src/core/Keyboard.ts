@@ -8,21 +8,13 @@ export default class Keyboard extends utils.EventEmitter {
   };
 
   static actions = {
-    UP: "UP",
-    DOWN: "DOWN",
     LEFT: "LEFT",
     RIGHT: "RIGHT",
-    JUMP: "JUMP",
-    SHIFT: "SHIFT",
   } as const;
 
   static actionKeyMap = {
-    [Keyboard.actions.UP]: "KeyW",
-    [Keyboard.actions.DOWN]: "KeyS",
     [Keyboard.actions.LEFT]: "KeyA",
     [Keyboard.actions.RIGHT]: "KeyD",
-    [Keyboard.actions.JUMP]: "Space",
-    [Keyboard.actions.SHIFT]: "ShiftLeft",
   } as const;
 
   static allKeys = Object.values(Keyboard.actionKeyMap);
