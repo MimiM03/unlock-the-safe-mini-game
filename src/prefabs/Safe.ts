@@ -1,12 +1,14 @@
 import { Container, Sprite } from "pixi.js";
 import Keyboard from "../core/Keyboard";
 import { Handle, type TurnDirection } from "./Handle";
+import { CombinationManager } from "../backend/CombinationManager";
 
 export default class Safe extends Container {
   private background: Sprite;
   private doorClosed: Sprite;
   private handle: Handle;
   private keyboard = Keyboard.getInstance();
+  private combinationManager = new CombinationManager();
 
   constructor() {
     super();
@@ -49,8 +51,20 @@ export default class Safe extends Container {
     });
   }
 
-  turnHandle(direction: TurnDirection) {
-    return this.handle.turn(direction);
+  async turnHandle(direction: TurnDirection) {
+    await this.handle.turn(direction);
+
+    const result = this.combinationManager.registerPlayerTurn(direction);
+    console.log(`Result: "${result}"`);
+
+    if (result === "FAIL") {
+      await this.handle.handleFailure(direction);
+      this.combinationManager.reset();
+      return;
+      
+    } else if (result === "SUCCESS") {
+      // TODO: handle success, open safe
+    }
   }
 
   resize(width: number, height: number) {

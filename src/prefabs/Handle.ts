@@ -47,4 +47,22 @@ export class Handle extends Container {
       this.turning = false;
     }
   }
+
+  async handleFailure(direction: TurnDirection){
+    if (this.turning) return;
+
+    this.turning = true;
+    const stepRadians = (config.handle.failureStepDegrees * Math.PI) / 180;
+    const targetRotation = this.handleSprite.rotation + direction * stepRadians;
+
+    try {
+      await gsap.to([this.handleSprite, this.shadowSprite], {
+        rotation: targetRotation,
+        duration: config.handle.failureDuration,
+        ease: "power2.out",
+      });
+    } finally {
+      this.turning = false;
+    }
+  }
 }
