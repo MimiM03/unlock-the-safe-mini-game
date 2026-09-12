@@ -198,7 +198,7 @@ export default class Safe extends Container {
 
   resize(width: number, height: number): void {
     const bg = this.background.texture;
-    const scale = Math.max(width / bg.width, height / bg.height);
+    const scale = Math.min(width / bg.width, height / bg.height);
 
     this.scale.set(scale);
     this.position.set(width / 2, height / 2);
